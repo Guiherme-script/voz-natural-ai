@@ -1,5 +1,10 @@
 import { upload } from '@vercel/blob/client';
 
+// Em produção aponta para o Railway; em dev é vazio (Vite proxy cuida)
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — import.meta.env é injetado pelo Vite em runtime
+const API_BASE: string = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) ?? '';
+
 export type VoiceName =
   | 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Zephyr'
   | 'Aoede' | 'Achird' | 'Algenib' | 'Orus' | 'Sulafat'
@@ -18,7 +23,7 @@ export async function generateSpeech({
   emotion = 'neutral',
   signal,
 }: TTSOptions): Promise<string> {
-  const response = await fetch('/api/tts', {
+  const response = await fetch(`${API_BASE}/api/tts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, voice, emotion }),
@@ -45,13 +50,13 @@ export interface ClonedVoice {
 
 export interface CloneVoiceOptions {
   name: string;
-  audioFile: File;           // agora recebe o File diretamente
+  audioFile: File;
   signal?: AbortSignal;
 }
 
 /**
  * Faz upload do áudio direto do browser → Vercel Blob,
- * depois chama nosso backend com a URL do blob (sem limite de tamanho).
+ * depois chama o backend com a URL (sem limite de tamanho).
  */
 export async function cloneVoice({
   name,
@@ -59,14 +64,14 @@ export async function cloneVoice({
   signal,
 }: CloneVoiceOptions): Promise<ClonedVoice> {
 
-  // 1. Upload direto do browser para o Vercel Blob (sem passar pelo backend)
+  // Upload direto browser → Vercel Blob (sem passar pelo backend)
   const blob = await upload(audioFile.name, audioFile, {
     access: 'public',
-    handleUploadUrl: '/api/elevenlabs/upload-token',
+    handleUploadUrl: `${API_BASE}/api/elevenlabs/upload-token`,
   });
 
-  // 2. Envia só a URL (pequena) para o backend que chama o ElevenLabs
-  const response = await fetch('/api/elevenlabs/clone', {
+  // Envia só a URL (pequena) para o backend clonar no ElevenLabs
+  const response = await fetch(`${API_BASE}/api/elevenlabs/clone`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -92,13 +97,12 @@ export interface ElevenLabsTTSOptions {
   signal?: AbortSignal;
 }
 
-/** Gera áudio usando uma voz clonada no ElevenLabs. Retorna base64 MP3. */
 export async function generateSpeechElevenLabs({
   text,
   voiceId,
   signal,
 }: ElevenLabsTTSOptions): Promise<string> {
-  const response = await fetch('/api/elevenlabs/tts', {
+  const response = await fetch(`${API_BASE}/api/elevenlabs/tts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, voiceId }),
