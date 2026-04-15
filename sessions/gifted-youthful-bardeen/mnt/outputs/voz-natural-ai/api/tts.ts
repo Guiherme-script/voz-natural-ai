@@ -2,13 +2,51 @@ import { GoogleGenAI, Modality } from "@google/genai";
 
 const EMOTION_PROMPTS: Record<string, string> = {
   neutral: '',
-  cheerful: 'Leia com entusiasmo e alegria: ',
-  sad: 'Leia com tristeza e melancolia: ',
-  excited: 'Leia com grande animação e energia: ',
-  whispering: 'Leia em um sussurro suave e discreto: ',
-  angry: 'Leia com raiva e intensidade: ',
-  calm: 'Leia com calma e serenidade: ',
-  dramatic: 'Leia de forma dramática e impactante: ',
+
+  cheerful:
+    'Leia o texto a seguir com voz animada, sorridente e cheia de energia positiva. ' +
+    'Como alguém que está genuinamente feliz e quer transmitir boa disposição. ' +
+    'Use entonação ascendente e ritmo leve: ',
+
+  excited:
+    'Leia com empolgação intensa e euforia. A voz deve soar acelerada, com ênfase ' +
+    'exagerada nas palavras-chave, como alguém que acabou de receber uma notícia incrível. ' +
+    'Variações de tom marcadas, ritmo rápido e energia contagiante: ',
+
+  calm:
+    'Leia de forma profundamente serena e pausada, como uma meditação guiada. ' +
+    'Voz suave, respiração calma entre as frases, ritmo lento e tranquilizador, ' +
+    'sem qualquer pressa ou tensão: ',
+
+  sad:
+    'Leia com voz carregada de tristeza e melancolia. Tom baixo, pausas lentas, ' +
+    'como alguém que está contendo as lágrimas e carrega um peso emocional profundo. ' +
+    'Evite qualquer leveza — cada palavra deve soar pesada e sentida: ',
+
+  angry:
+    'Leia com raiva intensa e contida. Voz tensa e firme, articulação forte e cortante, ' +
+    'como alguém que perdeu a paciência mas ainda tenta se controlar. ' +
+    'Ritmo incisivo, ênfase dura nas consoantes: ',
+
+  whispering:
+    'Leia em sussurro íntimo e suave, como se estivesse contando um segredo muito importante ' +
+    'ao ouvido de alguém. Voz muito baixa, próxima, quase inaudível, com pausas discretas ' +
+    'e ar de confidencialidade: ',
+
+  dramatic:
+    'Leia de forma teatral, grandiosamente impactante, como um narrador de trailer de cinema. ' +
+    'Use pausas dramáticas longas antes das palavras-chave, variações extremas de volume e tom, ' +
+    'como se cada frase fosse a mais importante já dita: ',
+
+  serious:
+    'Leia com tom completamente sério, firme e autoritário. Sem qualquer traço de leveza, ' +
+    'sorriso ou descontração. Como um comunicado formal importante, um juiz lendo uma sentença ' +
+    'ou um general dando uma ordem: ',
+
+  sarcastic:
+    'Leia com ironia e sarcasmo evidente. Prolongue certas palavras, use entonação descendente ' +
+    'no final das frases, como alguém que claramente não acredita no que está dizendo. ' +
+    'Pausas estratégicas para dar ênfase ao tom irônico: ',
 };
 
 export default async function handler(req: any, res: any) {
