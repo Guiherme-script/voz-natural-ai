@@ -1,3 +1,5 @@
+import { upload } from '@vercel/blob/client';
+
 export type VoiceName =
   | 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Zephyr'
   | 'Aoede' | 'Achird' | 'Algenib' | 'Orus' | 'Sulafat'
@@ -29,22 +31,11 @@ export async function generateSpeech({
   }
 
   const { audio } = await response.json();
-
-  if (!audio) {
-    throw new Error('Resposta inválida do servidor.');
-  }
-
+  if (!audio) throw new Error('Resposta inválida do servidor.');
   return audio;
 }
 
 // ── ElevenLabs ─────────────────────────────────────────────────────────────
-
-export interface CloneVoiceOptions {
-  name: string;
-  audioBase64: string;
-  audioMime?: string;
-  signal?: AbortSignal;
-}
 
 export interface ClonedVoice {
   id: string;
@@ -52,17 +43,37 @@ export interface ClonedVoice {
   createdAt: number;
 }
 
-/** Sends an audio reference to our server, which clones it via ElevenLabs. */
+export interface CloneVoiceOptions {
+  name: string;
+  audioFile: File;           // agora recebe o File diretamente
+  signal?: AbortSignal;
+}
+
+/**
+ * Faz upload do áudio direto do browser → Vercel Blob,
+ * depois chama nosso backend com a URL do blob (sem limite de tamanho).
+ */
 export async function cloneVoice({
   name,
-  audioBase64,
-  audioMime = 'audio/mpeg',
+  audioFile,
   signal,
 }: CloneVoiceOptions): Promise<ClonedVoice> {
+
+  // 1. Upload direto do browser para o Vercel Blob (sem passar pelo backend)
+  const blob = await upload(audioFile.name, audioFile, {
+    access: 'public',
+    handleUploadUrl: '/api/elevenlabs/upload-token',
+  });
+
+  // 2. Envia só a URL (pequena) para o backend que chama o ElevenLabs
   const response = await fetch('/api/elevenlabs/clone', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, audioBase64, audioMime }),
+    body: JSON.stringify({
+      name,
+      blobUrl: blob.url,
+      audioMime: audioFile.type || 'audio/mpeg',
+    }),
     signal,
   });
 
@@ -81,7 +92,7 @@ export interface ElevenLabsTTSOptions {
   signal?: AbortSignal;
 }
 
-/** Generates speech using a cloned ElevenLabs voice. Returns base64 MP3. */
+/** Gera áudio usando uma voz clonada no ElevenLabs. Retorna base64 MP3. */
 export async function generateSpeechElevenLabs({
   text,
   voiceId,

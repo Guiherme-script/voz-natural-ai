@@ -271,13 +271,8 @@ export default function App() {
     setCloneError(null);
     setCloneSuccess(null);
     try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload  = (e) => resolve((e.target?.result as string).split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(cloneAudioFile);
-      });
-      const cloned = await cloneVoice({ name: cloneName.trim(), audioBase64: base64, audioMime: cloneAudioFile.type || 'audio/mpeg' });
+      // Passa o File diretamente — o upload vai ao Vercel Blob sem limite de tamanho
+      const cloned = await cloneVoice({ name: cloneName.trim(), audioFile: cloneAudioFile });
       setClonedVoices(prev => [cloned, ...prev]);
       setVoice(cloned.id);
       setCloneSuccess(`Voz "${cloned.name}" clonada com sucesso!`);

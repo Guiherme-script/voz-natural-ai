@@ -1,21 +1,15 @@
-// Aumenta o limite do body parser para suportar arquivos de áudio grandes (WAV/MP3)
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb',
-    },
-  },
-};
+import { del } from '@vercel/blob';
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { name, audioBase64, audioMime = 'audio/mpeg' } = req.body ?? {};
+  // Agora recebe a URL do Vercel Blob (não mais base64)
+  const { name, blobUrl, audioMime = 'audio/mpeg' } = req.body ?? {};
 
-  if (!name || !audioBase64) {
-    return res.status(400).json({ error: 'Campos "name" e "audioBase64" são obrigatórios.' });
+  if (!name || !blobUrl) {
+    return res.status(400).json({ error: 'Campos "name" e "blobUrl" são obrigatórios.' });
   }
 
   const apiKey = process.env.ELEVENLABS_API_KEY;
@@ -26,8 +20,14 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const audioBuffer = Buffer.from(audioBase64, 'base64');
-    const ext = audioMime.split('/')[1]?.split(';')[0] ?? 'mp3';
+    // Baixa o arquivo de áudio do Vercel Blob (sem limite de tamanho)
+    const audioResponse = await fetch(blobUrl);
+    if (!audioResponse.ok) {
+      throw new Error(`Falha ao baixar o áudio do blob: ${audioResponse.status}`);
+    }
+    const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
+
+    const ext = audioMime.split('/')[1]?.split(';')[0]?.replace('x-', '') ?? 'mp3';
 
     const form = new FormData();
     const blob = new Blob([audioBuffer], { type: audioMime });
@@ -47,6 +47,10 @@ export default async function handler(req: any, res: any) {
     }
 
     const data = await response.json() as any;
+
+    // Apaga o áudio temporário do blob após clonar
+    try { await del(blobUrl); } catch { /* não crítico */ }
+
     return res.status(200).json({ voiceId: data.voice_id });
   } catch (err: any) {
     console.error('[Clone Error]', err?.message ?? err);
