@@ -255,8 +255,18 @@ export default function App() {
   };
 
   // ── Voice cloning ─────────────────────────────────────────────────────────
+  const MAX_AUDIO_MB = 30;
+
   const handleCloneVoice = async () => {
     if (!cloneAudioFile || !cloneName.trim() || isCloning) return;
+
+    // Validate file size before sending
+    const fileMB = cloneAudioFile.size / (1024 * 1024);
+    if (fileMB > MAX_AUDIO_MB) {
+      setCloneError(`Arquivo muito grande (${fileMB.toFixed(1)} MB). O limite é ${MAX_AUDIO_MB} MB. Use um arquivo MP3 comprimido ou corte o áudio.`);
+      return;
+    }
+
     setIsCloning(true);
     setCloneError(null);
     setCloneSuccess(null);
@@ -525,8 +535,8 @@ export default function App() {
                   >
                     <div className="px-8 pb-8 space-y-5 border-t border-white/5 pt-6">
                       <p className="text-[10px] opacity-30 leading-relaxed">
-                        Envie um áudio de referência (MP3, WAV — mínimo 30s para melhor qualidade).
-                        Requer <span className="text-blue-400/60">ELEVENLABS_API_KEY</span> no <code className="bg-white/5 px-1 rounded">.env.local</code>.
+                        Envie um áudio de referência (MP3 ou WAV, máx. 30 MB — mínimo 30s para melhor qualidade).
+                        Prefira MP3 para arquivos menores. Requer <span className="text-blue-400/60">ELEVENLABS_API_KEY</span> no <code className="bg-white/5 px-1 rounded">.env.local</code>.
                       </p>
 
                       <AnimatePresence>
@@ -564,7 +574,11 @@ export default function App() {
                             }`}
                           >
                             <FileText size={14} />
-                            <span className="truncate">{cloneAudioFile ? cloneAudioFile.name : 'Selecionar MP3 / WAV'}</span>
+                            <span className="truncate">
+                              {cloneAudioFile
+                                ? `${cloneAudioFile.name} (${(cloneAudioFile.size / (1024 * 1024)).toFixed(1)} MB)`
+                                : 'Selecionar MP3 / WAV'}
+                            </span>
                           </button>
                           <input ref={audioInputRef} type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg"
                             onChange={(e) => setCloneAudioFile(e.target.files?.[0] ?? null)} className="hidden" />

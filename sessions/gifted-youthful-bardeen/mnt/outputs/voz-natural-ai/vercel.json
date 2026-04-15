@@ -4,5 +4,17 @@
   "framework": "vite",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }
-  ]
+  ],
+  "functions": {
+    "api/elevenlabs/clone.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "api/elevenlabs/tts.ts": {
+      "maxDuration": 30
+    },
+    "api/tts.ts": {
+      "maxDuration": 30
+    }
+  }
 }
